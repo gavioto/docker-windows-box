@@ -1,14 +1,35 @@
 # docker-windows-box
 
-This is a Vagrant box to test Windows Docker Containers on a Windows Server 2016 TP4.
+This repo is a collection of various Vagrant environments to work with Windows Containers on a Windows Server 2019 or Windows 10 VM.
 
-![](images/tp4.png)
+There are different Vagrantfiles for each scenario:
+
+* `Vagrantfile` - Windows Server 2019 and Docker 18.09.0
+* WSL 2
+  * [`wsl2/server/Vagrantfile`](wsl2/server/README.md) - Windows Server Core, version 2004 with WSL 2
+  * [`wsl2/windows10/Vagrantfile`](wsl2/windows10/README.md) - Windows 10, version 2004 with WSL 2
+* [`lcow/Vagrantfile`](lcow/README.md) - Windows 10 with nightly Docker and LCOW enabled
+* [`nano/Vagrantfile`](nano/README.md) - Test setup to have Docker engine installed in a Windows Nanoserver VM
+* [`swarm-demo/Vagrantfile`](swarm-demo/README.md) - some Windows Server 2016 VM's in classical Docker Swarm
+* [`swarm-mode/Vagrantfile`](swarm-mode/README.md) - some Windows Server 2016 VM's in Docker Swarm-mode and overlay network
+* [`windows10/Vagrantfile`](windows10/README.md) - Windows 10 1809 and nightly Docker to test process isolation
+* docker-machine test environments
+  * [`docker-machine/Vagrantfile`](docker-machine/README.md) - Windows 10 with `docker-machine` installed to test with VMware Workstation
+  * [`docker-machine-fusion/Vagrantfile`](docker-machine-fusion/README.md) - macOS 10.13 with `docker-machine` installed to test with VMware Fusion
+
+## Introduction
+
+This repo has started with a single Vagrantfile that is explained below. As you can see there are several interesting setups here as well in the sub folders.
+
+Have a look at my blog posts how to [Setup a local Windows 2016 TP5 Docker VM](https://stefanscherer.github.io/setup-local-windows-2016-tp5-docker-vm/) and [Adding Hyper-V support to 2016 TP5 Docker VM](https://stefanscherer.github.io/adding-hyper-v-support-to-2016-tp5-docker-vm/) for more details. I also can recommend a more up to date guide [Getting started with Windows Containers](http://glennsarti.github.io/blog/getting-started-with-windows-containers/) by [@glennsarti](https://github.com/glennsarti)
+
+![](images/server2016.png)
 
 After provisioning the box has the following tools installed:
 
-* Docker TP4 engine and client
-* docker-machine 0.6.0
-* docker-compose 1.6.0
+* Windows Server 2019 with Docker Engine 18.09.0 and client
+* docker-machine 0.16.0
+* docker-compose 1.23.0
 * (Docker Tab completion for PowerShell (posh-docker))
 * Chocolatey
 * Git command line
@@ -17,7 +38,7 @@ After provisioning the box has the following tools installed:
 
 Optionally you can create a Hyper-V Docker Linux machine and have a multi architecture experience in one VM.
 
-Tested with VMware Fusion 7.1.3 on a MacBookPro with Retina display. The Vagrant box will be started in fullscreen mode also with Retina support.
+Tested with Vagrant 2.1.2, VMware Fusion Pro 10.1.3 on a MacBookPro with Retina display. The Vagrant box will be started in fullscreen mode also with Retina support.
 
 You can learn and play a lot of scenarios with it:
 
@@ -27,17 +48,18 @@ Future work will be a Docker Swarm with both Linux and Windows Docker Engines...
 
 ## Get the base box
 
-First register to [evaluate Windows 2016 TP4](https://technet.microsoft.com/de-de/evalcenter/dn781243.aspx), but you don't need to download the ISO manually.
+First register to [evaluate Windows 2019](https://www.microsoft.com/evalcenter/evaluate-windows-server-2019), but you don't need to download the ISO manually.
 
-If you don't have the Vagrant `windows_2016_docker` base box you need to create it first with [Packer](https://packer.io). See my [packer-windows](https://github.com/StefanScherer/packer-windows) repo to build the base box.
+The Vagrant base box is available in Vagrant Cloud https://app.vagrantup.com/StefanScherer, these are all eval versions of Windows Server 2019 or Windows 10.
 
-To build the base box you have to run these commands on your host machine:
+Vagrant will download the base box if it's not available locally, a `vagrant box list` shows which boxes you already have downloaded.
 
-```
-git clone https://github.com/StefanScherer/packer-windows
-cd packer-windows
-packer build --only=vmware-iso windows_2016_docker.json
-vagrant box add windows_2016_docker windows_2016_docker_vmware.box
+## Install Vagrant reload plugin
+
+As we need to reboot the VM once during the provisioning, you will need an additional Vagrant plugin
+
+```bash
+vagrant plugin install vagrant-reload
 ```
 
 ## Spin up the box
@@ -45,7 +67,7 @@ vagrant box add windows_2016_docker windows_2016_docker_vmware.box
 To start the VM with [Vagrant](https://vagrantup.com) run this command
 
 ```bash
-vagrant up --provider vmware_fusion
+vagrant up
 ```
 
 You only have to logout and login once to have the Docker tools in user vagrant's PATH.
@@ -58,7 +80,7 @@ You may clone my [dockerfiles-windows](https://github.com/StefanScherer/dockerfi
 git clone https://github.com/StefanScherer/dockerfiles-windows
 cd dockerfiles-windows
 cd node
-.\build.bat
+.\build.ps1
 ```
 
 ## Test the nightly Windows Docker Engine
@@ -66,7 +88,7 @@ cd node
 You can update the Docker Engine with the script
 
 ```
-C:\vagrant\scripts\update-nightly-docker.ps1
+C:\update-container-host.ps1
 ```
 
 This will stop the Docker service, download the nightly build from https://master.dockerproject.org and restart the service.

@@ -1,11 +1,19 @@
 Write-Host "Add Registry to hosts"
-$ip = "192.168.38.100"
+$ip = "192.168.36.2"
 # I know this could be done with vagrant-hostmanager
 Add-Content C:\Windows\system32\drivers\etc\hosts "`r`n$ip registry"
 
-Write-Host "Add Docker Registry"
-cp C:\ProgramData\docker\runDockerDaemon.cmd C:\ProgramData\docker\runDockerDaemon.cmd.bak
-cat C:\ProgramData\docker\runDockerDaemon.cmd.bak | %{$_ -replace '^docker daemon -D -b "Virtual Switch" -H 0.0.0.0:2375$','docker daemon -D -b "Virtual Switch" -H 0.0.0.0:2375 --insecure-registry registry:5000'} | Set-Content C:\ProgramData\docker\runDockerDaemon.cmd
+Write-Host "Stopping docker service"
+Stop-Service docker
 
-Write-Host "Restarting docker"
-Restart-Service docker
+Write-Host "Adding insecure registry"
+$daemonJson = "$env:ProgramData\docker\config\daemon.json"
+$config = @{}
+if (Test-Path $daemonJson) {
+  $config = (Get-Content $daemonJson) -join "`n" | ConvertFrom-Json
+}
+$config = $config | Add-Member(@{ 'insecure-registries' = @( 'registry:5000' ) }) -Force -PassThru
+$config | ConvertTo-Json | Set-Content $daemonJson -Encoding Ascii
+
+Write-Host "Starting docker service"
+Start-Service docker
